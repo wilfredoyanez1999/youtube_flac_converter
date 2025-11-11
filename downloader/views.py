@@ -7,9 +7,11 @@ import uuid
 import os 
 import yt_dlp
 import io 
+# Nota: Ya no necesitamos 'time' ni 'threading'
 from django.conf import settings 
 
 class HomeView(FormView):
+    # ... (El código de HomeView se mantiene igual)
 
     template_name = 'downloader/homepage.html'
     form_class = LinkForm
@@ -32,11 +34,7 @@ class HomeView(FormView):
             ydl_opts = {
                 'format': 'bestaudio/best',
                 'outtmpl': out_template, 
-
-                # OPTIMIZACIÓN DE VELOCIDAD: Descarga concurrente (MAX SPEED)
                 'concurrent_fragment_downloads': 20, 
-
-                # Opciones para metadatos y portada
                 'writethumbnail': True, 
                 'embed_thumbnail': True, 
                 'writemetadata': True,
@@ -47,7 +45,6 @@ class HomeView(FormView):
                     'release_year': '%(release_year)s',
                     'artist': '%(artist)s',
                 },
-                # POSTPROCESADORES: Conversión (1) y luego Incrustación de Imagen (2)
                 'postprocessors': [
                     {
                         'key': 'FFmpegExtractAudio',
@@ -59,7 +56,6 @@ class HomeView(FormView):
                         'already_have_thumbnail': False,
                     }
                 ],
-                # RUTA DE FFMPEG
                 'ffmpeg_location': 'C:/Users/usuario/Documents/ffmpeg/bin/ffmpeg.exe', 
                 'noplaylist': True,
             }
@@ -93,17 +89,20 @@ class HomeView(FormView):
         context['page_title'] = 'YouTube a FLAC Converter'
         return context
 
+
+# ----------------------------------------------------------------------
+# VISTA CORREGIDA Y FINAL (SIN LIMPIEZA INMEDIATA)
+# ----------------------------------------------------------------------
 class DownloadFileView(View):
     
-    # Acepta 'file_name' como parámetro
     def get(self, request, file_name): 
 
-        # 1. Ruta al archivo FLAC real
         file_path = os.path.join(os.path.dirname(__file__), 'temp_downloads', file_name)
 
         if os.path.exists(file_path): 
             try:
                 
+                # Abre el manejador del archivo binario
                 file_handle = open(file_path, 'rb') 
                 
                 response = FileResponse(
@@ -113,8 +112,10 @@ class DownloadFileView(View):
                     content_type='audio/flac' 
                 )
                 
-                # LÓGICA DE ELIMINACIÓN
-                response.close = lambda: os.remove(file_path)
+                # LA ÚNICA TAREA EN response.close ES CERRAR EL MANEJADOR
+                # Esto libera el bloqueo del sistema operativo inmediatamente después de la descarga.
+                # El archivo permanece en el disco, pero DEJA DE ESTAR BLOQUEADO.
+                response.close = file_handle.close
                 
                 return response
 
