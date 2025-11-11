@@ -7,7 +7,7 @@ import uuid
 import os 
 import yt_dlp
 import io 
-from django.conf import settings # Mantener si se usa en el futuro
+from django.conf import settings 
 
 class HomeView(FormView):
 
@@ -19,14 +19,12 @@ class HomeView(FormView):
         
         youtube_link = form.cleaned_data['link']
         
-        # Define la ruta de la carpeta temporal (crea si no existe)
         temp_dir = os.path.join(os.path.dirname(__file__), 'temp_downloads')
         os.makedirs(temp_dir, exist_ok=True)
         
-        # Genera un ID único para anclar el nombre del archivo
         file_id = str(uuid.uuid4()) 
 
-        # PATRÓN DE SALIDA: Usa metadatos de yt-dlp y el ID para asegurar un nombre único
+        # PATRÓN DE SALIDA: Usa metadatos y el ID para asegurar un nombre único
         out_template = os.path.join(temp_dir, f'%(title)s_%(album)s_%(release_year)s-{file_id}.%(ext)s')
         
         try:
@@ -34,31 +32,39 @@ class HomeView(FormView):
             ydl_opts = {
                 'format': 'bestaudio/best',
                 'outtmpl': out_template, 
-                
-                # Opciones para extracción de metadatos y conversión
+
+                # Opciones para la portada y metadatos
+                'writethumbnail': True, 
+                'embed_thumbnail': True, 
                 'writemetadata': True,
+                
                 'parse_metadata': { 
                     'title': '%(title)s',
                     'album': '%(album)s',
                     'release_year': '%(release_year)s',
                     'artist': '%(artist)s',
                 },
-                'postprocessors': [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'flac', 
-                    'preferredquality': '0', 
-                }],
-                # RUTA ABSOLUTA DE FFMPEG: Usada para evitar problemas de PATH en Windows
+                # POSTPROCESADORES: Conversión (1) y luego Incrustación de Imagen (2)
+                'postprocessors': [
+                    {
+                        'key': 'FFmpegExtractAudio',
+                        'preferredcodec': 'flac', 
+                        'preferredquality': '0', 
+                    },
+                    {
+                        'key': 'EmbedThumbnail',
+                        'already_have_thumbnail': False,
+                    }
+                ],
+                # RUTA DE FFMPEG (Mantén tu ruta específica de Windows)
                 'ffmpeg_location': 'C:/Users/usuario/Documents/ffmpeg/bin/ffmpeg.exe', 
                 'noplaylist': True,
             }
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                # Inicia la descarga y conversión
                 ydl.extract_info(youtube_link, download=True) 
             
             # --- Buscar el nombre de archivo generado ---
-            # Buscamos el archivo real que yt-dlp creó que contiene el ID único.
             actual_file_name = None
             for fname in os.listdir(temp_dir):
                 if fname.endswith(f'-{file_id}.flac'):
@@ -68,7 +74,7 @@ class HomeView(FormView):
             if not actual_file_name:
                 raise FileNotFoundError("Error: yt-dlp no pudo encontrar el archivo .flac.")
 
-            # Redirecciona a la vista de descarga, pasando el nombre completo del archivo
+            # Redirecciona pasando el nombre completo del archivo
             return redirect('download_file', file_name=actual_file_name)
 
         except Exception as e:
@@ -86,13 +92,14 @@ class HomeView(FormView):
 
 class DownloadFileView(View):
     
-    # El método ahora acepta 'file_name' (el nombre completo generado por yt-dlp)
+    # Acepta 'file_name' como parámetro
     def get(self, request, file_name): 
 
         # 1. Ruta al archivo FLAC real
         file_path = os.path.join(os.path.dirname(__file__), 'temp_downloads', file_name)
 
-        if os.path.exists(file_path):
+        # CÓDIGO CORREGIDO: Añadidos los paréntesis y dos puntos a la sentencia if
+        if os.path.exists(file_path): 
             try:
                 
                 file_handle = open(file_path, 'rb') 
@@ -104,8 +111,7 @@ class DownloadFileView(View):
                     content_type='audio/flac' 
                 )
                 
-                # LÓGICA DE ELIMINACIÓN: Cierra el archivo y lo elimina del disco
-                # inmediatamente después de que el archivo es servido.
+                # LÓGICA DE ELIMINACIÓN: Elimina el archivo inmediatamente después de ser servido.
                 response.close = lambda: os.remove(file_path)
                 
                 return response
