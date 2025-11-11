@@ -1,3 +1,5 @@
 /.venv
 
 /downloader/temp_downloads/
+
+/db.sqlite3
