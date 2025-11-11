@@ -33,7 +33,10 @@ class HomeView(FormView):
                 'format': 'bestaudio/best',
                 'outtmpl': out_template, 
 
-                # Opciones para la portada y metadatos
+                # OPTIMIZACIÓN DE VELOCIDAD: Descarga concurrente (MAX SPEED)
+                'concurrent_fragment_downloads': 20, 
+
+                # Opciones para metadatos y portada
                 'writethumbnail': True, 
                 'embed_thumbnail': True, 
                 'writemetadata': True,
@@ -49,14 +52,14 @@ class HomeView(FormView):
                     {
                         'key': 'FFmpegExtractAudio',
                         'preferredcodec': 'flac', 
-                        'preferredquality': '0', 
+                        'preferredquality': '5', 
                     },
                     {
                         'key': 'EmbedThumbnail',
                         'already_have_thumbnail': False,
                     }
                 ],
-                # RUTA DE FFMPEG (Mantén tu ruta específica de Windows)
+                # RUTA DE FFMPEG
                 'ffmpeg_location': 'C:/Users/usuario/Documents/ffmpeg/bin/ffmpeg.exe', 
                 'noplaylist': True,
             }
@@ -98,7 +101,6 @@ class DownloadFileView(View):
         # 1. Ruta al archivo FLAC real
         file_path = os.path.join(os.path.dirname(__file__), 'temp_downloads', file_name)
 
-        # CÓDIGO CORREGIDO: Añadidos los paréntesis y dos puntos a la sentencia if
         if os.path.exists(file_path): 
             try:
                 
@@ -111,7 +113,7 @@ class DownloadFileView(View):
                     content_type='audio/flac' 
                 )
                 
-                # LÓGICA DE ELIMINACIÓN: Elimina el archivo inmediatamente después de ser servido.
+                # LÓGICA DE ELIMINACIÓN
                 response.close = lambda: os.remove(file_path)
                 
                 return response
