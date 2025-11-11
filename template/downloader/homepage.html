@@ -1,0 +1,35 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title }} | YouTube a FLAC</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <div class="converter-container">
+        <h1>YouTube a FLAC Converter</h1>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="form-group">
+                {{ form.link.label_tag }}
+                {{ form.link }}
+                {% if form.link.errors %}
+                    <div class="error">{{ form.link.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="processing-info">
+                <p>Proceso: **Pega el link** ➡️ **Convierte** ➡️ **Descarga FLAC**</p>
+            </div>
+
+            <button type="submit" class="btn-convert">
+                <span class="icon">⬇️</span> Convertir y Descargar
+            </button>
+        </form>
+    </div>
+</body>
+</html>

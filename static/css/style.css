@@ -1,0 +1,109 @@
+/* --- Global Styles --- */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f0f2f5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+}
+
+/* --- Container Style --- */
+.converter-container {
+    background-color: #ffffff;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 500px;
+    text-align: center;
+}
+
+/* --- Header --- */
+h1 {
+    color: #333;
+    margin-bottom: 30px;
+    font-size: 24px;
+    border-bottom: 2px solid #ff0000;
+    display: inline-block;
+    padding-bottom: 5px;
+}
+
+/* --- Form Group & Inputs --- */
+.form-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+/* Estilo para el label del formulario */
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #555;
+}
+
+/* Estilo para el campo de texto (link) */
+.form-group input[type="url"] {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #ccc;
+    border-radius: 6px;
+    box-sizing: border-box; /* Asegura que el padding no cambie el ancho total */
+    font-size: 16px;
+    transition: border-color 0.3s;
+}
+
+.form-group input[type="url"]:focus {
+    border-color: #ff0000;
+    outline: none;
+    box-shadow: 0 0 5px rgba(255, 0, 0, 0.3);
+}
+
+/* --- Processing Info (Boceto) --- */
+.processing-info {
+    background-color: #ffeaea; /* Fondo suave para el flujo de proceso */
+    color: #555;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 25px;
+    font-size: 0.9em;
+}
+
+/* --- Button Style --- */
+.btn-convert {
+    background-color: #ff0000; /* Color distintivo de YouTube */
+    color: white;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+    transition: background-color 0.3s, transform 0.1s;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-convert:hover {
+    background-color: #cc0000;
+}
+
+.btn-convert:active {
+    transform: translateY(1px);
+}
+
+.icon {
+    margin-right: 10px;
+    font-size: 1.2em;
+}
+
+/* --- Error Messages --- */
+.error {
+    color: #d9534f;
+    margin-top: 5px;
+    font-size: 0.85em;
+}
