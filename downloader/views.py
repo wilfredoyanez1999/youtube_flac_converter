@@ -6,7 +6,7 @@ from .form import LinkForm
 import uuid
 import os 
 import yt_dlp
-from mutagen.flac import FLAC # <--- NUEVA IMPORTACIÓN
+from mutagen.flac import FLAC 
 from django.conf import settings 
 
 class HomeView(FormView):
@@ -23,15 +23,26 @@ class HomeView(FormView):
         os.makedirs(temp_dir, exist_ok=True)
         
         file_id = str(uuid.uuid4()) 
-        
-        # Diccionario para guardar la información que *sí* extrae yt-dlp (título, canal)
         info_dict = {} 
         
         def hook(d):
-            # Obtener el info_dict para extraer el título y canal (necesario para mutagen)
             if d['status'] == 'finished':
                 nonlocal info_dict
                 info_dict = d['info_dict']
+
+            if d['status'] == 'downloading':
+                percent_str = d.get('_percent_str', '0%').strip()
+                speed_str = d.get('_speed_str', 'N/A')
+                total_str = d.get('_total_bytes_str', 'N/A')
+
+                print(f"PROGRESS: {percent_str} de {total_str} a {speed_str}")
+            
+            elif d['status'] == 'finished':
+                print("PROGRESS: Descarga de audio completada.")
+            
+            elif d['status'] == 'error':
+                print(f"ERROR: Ocurrió un error en la descarga: {d.get('error', 'Desconocido')}")
+
 
         # PATRÓN DE SALIDA
         out_template = os.path.join(temp_dir, f'%(title)s-{file_id}.%(ext)s')
@@ -42,15 +53,15 @@ class HomeView(FormView):
                 'format': 'bestaudio/best',
                 'outtmpl': out_template, 
                 'concurrent_fragment_downloads': 20, 
-                'progress_hooks': [hook], # Usamos el hook para obtener info_dict
+                'progress_hooks': [hook], 
                 
-                # Deshabilitamos todas las configuraciones de metadatos problemáticas:
                 'writethumbnail': True, 
                 'embed_thumbnail': True, 
-                'writemetadata': False, # Deshabilitamos la escritura automática
-                'parse_metadata': {}, # Vacío
+                'writemetadata': False, 
+                'parse_metadata': {}, 
                 
-                # POSTPROCESADORES (Solo los esenciales)
+                # LA LÍNEA 'extractor_args' HA SIDO ELIMINADA AQUÍ
+                
                 'postprocessors': [
                     {
                         'key': 'FFmpegExtractAudio',
@@ -79,7 +90,8 @@ class HomeView(FormView):
             if not actual_file_name_with_uuid:
                 raise FileNotFoundError("Error: yt-dlp no pudo encontrar el archivo .flac.")
 
-            # --- 2. RENOMBRAR Y LIMPIAR EL ARCHIVO EN DISCO (Lógica de renombrado anterior) ---
+            # --- 2. RENOMBRAR Y LIMPIAR EL ARCHIVO EN DISCO ---
+            
             base_name, extension = os.path.splitext(actual_file_name_with_uuid) 
             uuid_string_to_remove = f'-{file_id}' 
             try:
@@ -91,7 +103,6 @@ class HomeView(FormView):
             final_file_name_browser = base_name_clean_no_uuid + extension
             final_file_name_disk = final_file_name_browser.replace(' ', '_')
 
-            # Manejo del WinError 183
             path_to_final_file = os.path.join(temp_dir, final_file_name_disk)
             if os.path.exists(path_to_final_file):
                 print(f"DEBUG: Eliminando archivo de destino preexistente: {final_file_name_disk}")
@@ -105,7 +116,6 @@ class HomeView(FormView):
             
             # --- 3. ESCRIBIR METADATOS FORZADAMENTE CON MUTAGEN ---
             
-            # 3a. Obtener valores de fallback
             title = info_dict.get('title', base_name_clean_no_uuid)
             artist_album = info_dict.get('channel', info_dict.get('uploader', 'Unknown Artist'))
             year = info_dict.get('upload_date', '')[:4] if info_dict.get('upload_date') else ''
@@ -114,10 +124,8 @@ class HomeView(FormView):
             print(f"DEBUG: Escribiendo metadatos con Mutagen:")
             print(f"DEBUG: Título: {title}, Artista/Álbum: {artist_album}, Año: {year}")
             
-            # 3b. Escribir al archivo FLAC
             audio = FLAC(path_to_final_file)
             
-            # FLAC tags
             audio['title'] = [title]
             audio['artist'] = [artist_album]
             audio['album'] = [artist_album]
@@ -144,7 +152,6 @@ class HomeView(FormView):
         return context
 
 class DownloadFileView(View):
-    # La vista de descarga no necesita cambios, solo sirve el archivo limpio
     
     def get(self, request, file_name): 
         
